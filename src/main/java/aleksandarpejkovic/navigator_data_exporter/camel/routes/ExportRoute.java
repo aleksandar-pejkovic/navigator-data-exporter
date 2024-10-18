@@ -1,45 +1,28 @@
 package aleksandarpejkovic.navigator_data_exporter.camel.routes;
 
-import java.util.List;
-
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.stereotype.Component;
 
-import aleksandarpejkovic.navigator_data_exporter.model.Candidate;
-import aleksandarpejkovic.navigator_data_exporter.repository.CandidateRepository;
-import lombok.RequiredArgsConstructor;
-
 @Component
-@RequiredArgsConstructor
 public class ExportRoute extends RouteBuilder {
 
-    private final CandidateRepository candidateRepository;
+    private static final String DIRECT_EXPORT_CANDIDATES = "direct:exportCandidates";
+    private static final String JDBC_DATA_SOURCE = "jdbc:dataSource";
+    private static final String FILE_NAME = "hired_candidates.csv";
+    private static final String FILE_OUTPUT_DIRECTORY = "file://{{output.directory}}?fileName=" + FILE_NAME;
+    private static final String QUERY = """
+            SELECT first_name, last_name, phone, email
+            FROM candidates
+            WHERE hired = TRUE
+            """;
 
     @Override
     public void configure() throws Exception {
-        from("direct:exportCandidates")
-                .process(exchange -> {
-                    List<Candidate> candidates = candidateRepository.findAll();
-                    exchange.getIn().setBody(convertToCsvData(candidates));
-                })
-                .marshal().csv()  // Convert to CSV format
-                .to("file://{{output.directory}}?fileName=candidates.csv");  // Save to CSV file
-    }
-
-    private List<String[]> convertToCsvData(List<Candidate> candidates) {
-        return candidates.stream()
-                .map(candidate -> new String[]{
-                        candidate.getFirstName(),
-                        candidate.getLastName(),
-                        candidate.getJmbg(),
-                        String.valueOf(candidate.getBirthYear()),
-                        candidate.getEmail(),
-                        candidate.getPhone(),
-                        candidate.getNote(),
-                        String.valueOf(candidate.isHired()),
-                        candidate.getLastModified().toString()
-                })
-                .toList();
+        from(DIRECT_EXPORT_CANDIDATES)
+                .setBody(constant(QUERY))
+                .to(JDBC_DATA_SOURCE)
+                .marshal().csv()
+                .to(FILE_OUTPUT_DIRECTORY);
     }
 }
 

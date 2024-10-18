@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  # Spring Boot application service
+  app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: navigator-data-exporter
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/navigator
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      OUTPUT_DIRECTORY: /app/csv-output
+    depends_on:
+      - db
+
+  # PostgreSQL database service
+  db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: navigator
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
