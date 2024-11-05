@@ -26,7 +26,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CandidateController {
 
+    /**
+     * Producer template.
+     */
     private static final String DIRECT_EXPORT_CANDIDATES = "direct:exportCandidates";
+
+    /**
+     * Message indicating that export has been triggered.
+     */
     private static final String EXPORT_DATA_RETURN_MESSAGE = "Export to CSV has been triggered.";
 
     private final ProducerTemplate producerTemplate;
