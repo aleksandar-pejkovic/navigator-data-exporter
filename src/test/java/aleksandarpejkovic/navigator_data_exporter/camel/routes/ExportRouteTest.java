@@ -30,6 +30,9 @@ class ExportRouteTest {
     @EndpointInject("mock:file:output")
     MockEndpoint fileMockEndpoint;
 
+    /**
+     * Query for all hired candidates.
+     */
     private static final String QUERY = """
             SELECT first_name, last_name, phone, email
             FROM candidates
@@ -39,6 +42,12 @@ class ExportRouteTest {
     @Configuration
     static class TestConfig {
 
+        /**
+         * Test route that queries the database for candidates that have been hired
+         * and exports them to a CSV file.
+         *
+         * @return Route builder for the test route.
+         */
         @Bean
         RoutesBuilder route() {
             return new ExportRoute() {
@@ -46,9 +55,9 @@ class ExportRouteTest {
                 public void configure() throws Exception {
                     from("direct:exportCandidates")
                             .setBody(constant(QUERY))
-                            .to("mock:jdbc:dataSource")  // Replace the real data source with a mock
+                            .to("mock:jdbc:dataSource")
                             .marshal().csv()
-                            .to("mock:file:output");     // Replace file output with a mock endpoint
+                            .to("mock:file:output");
                 }
             };
         }
@@ -59,14 +68,20 @@ class ExportRouteTest {
         assertNotNull(producerTemplate);
     }
 
+    /**
+     * Tests that the {@link ExportRoute} queries the database for candidates that have been hired
+     * and exports them to a CSV file.
+     *
+     * @throws Exception if a problem occurs while setting up the route
+     */
     @Test
     public void shouldQueryCandidatesAndExportToCsv() throws Exception {
-        String mockData = "first_name,last_name,phone,email\nJohn,Doe,1234567890,john.doe@example.com";
-        jdbcMockEndpoint.expectedBodiesReceived(QUERY); // Check if the query was set correctly
-        fileMockEndpoint.expectedMessageCount(1);       // Expect one file to be written
-        fileMockEndpoint.expectedBodiesReceived(mockData); // Simulate expected CSV content
+        String mockData = "John,Doe,1234567890,john.doe@example.com";
+        jdbcMockEndpoint.expectedBodiesReceived(QUERY);
+        fileMockEndpoint.expectedMessageCount(1);
+        fileMockEndpoint.expectedBodiesReceived(mockData);
 
-        producerTemplate.sendBody("direct:exportCandidates", null); // Trigger the route
+        producerTemplate.sendBody("direct:exportCandidates", null);
 
         jdbcMockEndpoint.assertIsSatisfied();
         fileMockEndpoint.assertIsSatisfied();
